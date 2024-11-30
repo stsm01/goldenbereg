@@ -101,7 +101,8 @@ def set_date_format(sheet_name, column_letter):
     Устанавливает формат "Дата" для указанного столбца в Google Таблице.
     """
     client = authorize_google_sheets()
-    sheet = client.open_by_url(SHEET_URL).worksheet(sheet_name)
+    spreadsheet = client.open_by_url(SHEET_URL)
+    sheet = spreadsheet.worksheet(sheet_name)
     sheet_id = sheet.id  # Получаем ID листа
 
     # Определяем индекс столбца
@@ -130,7 +131,7 @@ def set_date_format(sheet_name, column_letter):
         }
     ]
 
-    # Выполняем batchUpdate
+    # Выполняем batchUpdate через объект Spreadsheet
     body = {"requests": requests}
-    client.batch_update(body)
+    spreadsheet.batch_update(body)
     print(f"Формат 'Дата' установлен для столбца {column_letter}.")

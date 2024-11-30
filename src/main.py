@@ -1,71 +1,85 @@
 import datetime
-from transactions import authorize_google_sheets, fetch_all_transactions
+import logging
+from transactions import fetch_all_transactions, update_google_sheet
+from categories import fetch_categories, add_categories_to_sheet
+from accounts import fetch_accounts, add_accounts_to_sheet
+from groups import fetch_groups, add_groups_to_sheet
 from src.config import SHEET_URL
 
+# Настройка логгирования
+logging.basicConfig(
+    level=logging.INFO,                # Уровень логгирования (INFO и выше)
+    filename='update.log',             # Имя файла, куда сохраняются логи
+    filemode='a',                      # Режим записи (a = append, добавлять записи в конец)
+    format='%(asctime)s - %(levelname)s - %(message)s'  # Формат сообщений
+)
 
 # Параметры
-SHEET_NAME = "Transactions"  # Имя листа в Google Таблице
-BIZ_ID = 17937  # ID бизнеса в Финологе
-
-
-def update_google_sheet(transactions):
-    """
-    Полностью перезаписывает Google Таблицу всеми транзакциями из Финолога.
-    """
-    print("Подключение к Google Таблице...")
-    client = authorize_google_sheets()
-    sheet = client.open_by_url(SHEET_URL).worksheet(SHEET_NAME)
-
-    print("Очищаем старые данные...")
-    headers = [
-        "ID", "Дата", "Бизнес ID", "Счёт ID", "Тип", "Категория ID",
-        "Контрагент ID", "Описание", "Сумма", "Статус", "Создано", "Обновлено"
-    ]
-    sheet.clear()
-    sheet.append_row(headers, value_input_option="USER_ENTERED")  # Записываем заголовки
-
-    print(f"Добавляем {len(transactions)} транзакций...")
-    formatted_transactions = [
-        [
-            tx.get("id"),
-            tx.get("date"),
-            tx.get("biz_id"),
-            tx.get("account_id"),
-            tx.get("type"),
-            tx.get("category_id"),
-            tx.get("contractor_id"),
-            tx.get("description"),
-            tx.get("value"),
-            tx.get("status"),
-            tx.get("created_at"),
-            tx.get("updated_at")
-        ]
-        for tx in transactions
-    ]
-    sheet.append_rows(formatted_transactions, value_input_option="USER_ENTERED")
-    print("Таблица успешно обновлена!")
-
+TRANSACTIONS_SHEET_NAME = "Transactions"
+CATEGORIES_SHEET_NAME = "Categories"
+ACCOUNTS_SHEET_NAME = "Accounts"
+GROUPS_SHEETS_NAME = "Groups"
+BIZ_ID = 17937
 
 def main():
     """
-    Основная функция для полной перезаписи Google Таблицы.
+    Основная функция для обновления данных Google Таблицы.
     """
     try:
-        print("Запуск обновления...")
-        # Получаем данные из Финолога
-        transactions = fetch_all_transactions(BIZ_ID)
+        logging.info("Запуск обновления...")
 
-        if not transactions:
-            print("Нет данных для обновления.")
-            return
+        # Обновление транзакций
+        try:
+            logging.info("Начинаем обновление транзакций...")
+            transactions = fetch_all_transactions(BIZ_ID)
+            if transactions:
+                update_google_sheet(TRANSACTIONS_SHEET_NAME, transactions)
+                logging.info(f"Успешно обновлено {len(transactions)} транзакций.")
+            else:
+                logging.info("Нет транзакций для обновления.")
+        except Exception as e:
+            logging.error(f"Ошибка при обновлении транзакций: {e}")
 
-        # Перезаписываем Google Таблицу
-        update_google_sheet(transactions)
+        # Обновление категорий
+        try:
+            logging.info("Начинаем обновление категорий...")
+            categories = fetch_categories(BIZ_ID)
+            if categories:
+                add_categories_to_sheet(categories, CATEGORIES_SHEET_NAME)
+                logging.info(f"Успешно обновлено {len(categories)} категорий.")
+            else:
+                logging.info("Нет категорий для обновления.")
+        except Exception as e:
+            logging.error(f"Ошибка при обновлении категорий: {e}")
 
-        print("Обновление завершено успешно!")
+        # Обновление счетов
+        try:
+            logging.info("Начинаем обновление счетов...")
+            accounts = fetch_accounts(BIZ_ID)
+            if accounts:
+                add_accounts_to_sheet(accounts, ACCOUNTS_SHEET_NAME)
+                logging.info(f"Успешно обновлено {len(accounts)} счетов.")
+            else:
+                logging.info("Нет счетов для обновления.")
+        except Exception as e:
+            logging.error(f"Ошибка при обновлении счетов: {e}")
+
+        # Обновление групп
+        try:
+            logging.info("Начинаем обновление групп...")
+            groups = fetch_groups(BIZ_ID)
+            if groups:
+                add_groups_to_sheet(groups, GROUPS_SHEETS_NAME)
+                logging.info(f"Успешно обновлено {len(groups)} групп.")
+            else:
+                logging.info("Нет групп для обновления.")
+        except Exception as e:
+            logging.error(f"Ошибка при обновлении групп: {e}")
+
+        logging.info("Обновление завершено успешно!")
+
     except Exception as e:
-        print("Ошибка в процессе обновления:", e)
-
+        logging.critical(f"Критическая ошибка в процессе обновления: {e}")
 
 if __name__ == "__main__":
     main()
