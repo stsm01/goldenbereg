@@ -63,6 +63,9 @@ def format_category(category):
     ]
 
 def add_categories_to_sheet(categories, sheet_name="Categories"):
+    """
+    Полностью перезаписывает лист с категориями в Google Таблице.
+    """
     client = authorize_google_sheets()
     if client is None:
         print("Не удалось авторизоваться. Операция прервана.")
@@ -98,23 +101,17 @@ def add_categories_to_sheet(categories, sheet_name="Categories"):
         "Погашение процентов"
     ]
 
-    # Проверяем, есть ли заголовки
-    if not worksheet.row_values(1):
-        print("Добавляем заголовки в таблицу...")
-        worksheet.append_row(headers)
+    # Очищаем лист и добавляем заголовки
+    print(f"Очищаем лист '{sheet_name}'...")
+    worksheet.clear()
+    worksheet.append_row(headers, value_input_option="USER_ENTERED")
 
-    # Собираем все существующие ID из таблицы
-    existing_ids = set(row[0] for row in worksheet.get_all_values()[1:] if row)
-    # Фильтруем транзакции, оставляя только новые
-    new_categories = [tx for tx in categories if str(tx.get("id")) not in existing_ids]
-
-    if not new_categories:
-        print("Нет новых категорий для добавления.")
-        return
-    rows = [format_category(tx) for tx in new_categories]
+    # Форматируем категории и добавляем в таблицу
+    print(f"Добавляем {len(categories)} категорий...")
+    rows = [format_category(cat) for cat in categories]
     worksheet.append_rows(rows, value_input_option="USER_ENTERED")
 
-    print(f"Добавлено {len(rows)} новых категорий.")
+    print(f"Лист '{sheet_name}' успешно обновлён.")
 
 if __name__ == "__main__":
     biz_id = 17937

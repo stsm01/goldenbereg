@@ -64,7 +64,7 @@ def update_google_sheet(sheet_name, transactions):
     print("Очищаем старые данные...")
     headers = [
         "ID", "Дата", "Бизнес ID", "Счёт ID", "Тип", "Категория ID",
-        "Контрагент ID", "Описание", "Сумма", "Статус", "Создано", "Обновлено"
+        "Контрагент ID", "Описание", "Сумма", "Статус", "Создано", "Обновлено", "Тип статьи"
     ]
     sheet.clear()
     sheet.append_row(headers, value_input_option="USER_ENTERED")  # Записываем заголовки
@@ -83,7 +83,8 @@ def update_google_sheet(sheet_name, transactions):
             tx.get("value"),
             tx.get("status"),
             tx.get("created_at"),
-            tx.get("updated_at")
+            tx.get("updated_at"),
+            tx.get("category_type")
         ]
         for tx in transactions
     ]
